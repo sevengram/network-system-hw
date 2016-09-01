@@ -1,2 +1,8 @@
 build/
 .idea/
+
+udp/test.c
+
+*~
+*.bak
+*.swp
