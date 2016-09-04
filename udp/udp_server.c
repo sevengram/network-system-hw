@@ -8,17 +8,11 @@
 #include <memory.h>
 #include "util.h"
 
-#define MAXLINE     1024
-#define MAXBUFSIZE  1024
-#define MAXARGS     32
-
 int main(int argc, char *argv[])
 {
     int sock;                           //This will be our socket
     struct sockaddr_in local, remote;   //"Internet socket address structure"
     socklen_t addr_len;                 //length of the sockaddr_in structure
-    char msg_buffer[MAXBUFSIZE];
-    char resp_buffer[MAXBUFSIZE];
 
     if (argc != 2) {
         printf("USAGE: <port>\n");
@@ -31,7 +25,7 @@ int main(int argc, char *argv[])
      * This code populates the sockaddr_in struct with
      * the information about our socket
      */
-    bzero(&local, sizeof(local));                 //zero the struct
+    memset(&local, 0, sizeof(local));                 //zero the struct
     local.sin_family = AF_INET;                   //address family
     local.sin_port = htons(atoi(argv[1]));        //htons() sets the port # to network byte order
     local.sin_addr.s_addr = INADDR_ANY;           //supplies the IP address of the local machine
@@ -57,35 +51,58 @@ int main(int argc, char *argv[])
         printf("unable to bind socket\n");
     }
 
-    int _argc;
-    char *_argv[MAXARGS];
     int exit_flag = 0;
-    char cmdline[MAXLINE];
+    char buffer[PACKET_SIZE];
+    char data[DATA_SIZE_MAX];
+    char message[LINE_MAX];
+    packet_t *outpkt = malloc(PACKET_SIZE);
     while (1) {
-        bzero(msg_buffer, sizeof(msg_buffer));
-        bzero(resp_buffer, sizeof(resp_buffer));
-        bzero(_argv, sizeof(char *) * MAXARGS);
+        memset(buffer, 0, sizeof(buffer));
+        recvfrom(sock, buffer, sizeof(buffer), 0, (struct sockaddr *) &remote, &addr_len);
 
-        // waits for an incoming msg
-        recvfrom(sock, msg_buffer, sizeof(msg_buffer), 0, (struct sockaddr *) &remote, &addr_len);
-        strcpy(cmdline, msg_buffer);
-
-        _argc = parse_line(msg_buffer, _argv);
-        if (_argc > 0 && strcmp(_argv[0], "exit") == 0) {
-            strcpy(resp_buffer, "Server will exit.\n");
-            exit_flag = 1;
-        } else if (_argc > 0 && strcmp(_argv[0], "ls") == 0) {
-            list_dir(resp_buffer, ".", '\n');
+        if (((packet_t *) buffer)->header.pkt_type == MSG_TYPE) {
+            msg_packet_t *mpkt = (msg_packet_t *) buffer;
+            switch (mpkt->req_type) {
+                case CMD_LS:
+                    list_dir(message, ".", '\n');
+                    build_msg_packet((msg_packet_t *) outpkt, mpkt->req_type, message, (uint16_t) strlen(message));
+                    break;
+                case CMD_EXIT:
+                    strcpy(message, "Server will exit.\n");
+                    build_msg_packet((msg_packet_t *) outpkt, mpkt->req_type, message, (uint16_t) strlen(message));
+                    exit_flag = 1;
+                    break;
+                case CMD_GET:
+                    if (strlen(mpkt->msg) > 0) {
+                        FILE *fp;
+                        size_t nbytes;
+                        if ((fp = fopen(mpkt->msg, "rb")) != NULL) {
+                            while (!feof(fp)) {
+                                nbytes = fread(data, sizeof(char), DATA_SIZE_MAX, fp);
+                                // TODO: change to data
+                                build_msg_packet((msg_packet_t *) outpkt, mpkt->req_type, data, (uint16_t) nbytes);
+                                sendto(sock, outpkt, nbytes, 0, (struct sockaddr *) &remote, addr_len);
+                            }
+                        } else {
+                            // TODO
+                        }
+                    } else {
+                        // TODO
+                    }
+                default:
+                    strcpy(message, mpkt->msg);
+                    build_msg_packet((msg_packet_t *) outpkt, mpkt->req_type, message, (uint16_t) strlen(message));
+            }
         } else {
-            strcpy(resp_buffer, cmdline);
+            // TODO: data packet
         }
-
-        sendto(sock, resp_buffer, strlen(resp_buffer), 0, (struct sockaddr *) &remote, addr_len);
+        sendto(sock, outpkt, PACKET_SIZE, 0, (struct sockaddr *) &remote, addr_len);
         if (exit_flag == 1) {
             break;
         }
     }
 
+    free(outpkt);
     close(sock);
     return 0;
 }
