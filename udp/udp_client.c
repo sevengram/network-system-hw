@@ -9,17 +9,14 @@
 
 int main(int argc, char *argv[])
 {
-    int sock;                            //this will be our socket
-    struct sockaddr_in remote;           //"Internet socket address structure"
-    socklen_t addr_len;                  //length of the sockaddr_in structure
-    char buffer[BUF_SIZE_MAX];
-
     if (argc < 3) {
         printf("USAGE: <server_ip> <server_port>\n");
         exit(1);
     }
 
-    addr_len = sizeof(struct sockaddr);
+    int sock;                            // this will be our socket
+    struct sockaddr_in remote;           // "Internet socket address structure"
+    socklen_t addr_len = sizeof(struct sockaddr); // length of the sockaddr_in structure
 
     /*
      * Here we populate a sockaddr_in struct with
@@ -46,7 +43,12 @@ int main(int argc, char *argv[])
     int _argc;
     char _argv[ARG_MAX][ARG_LEN_MAX];
     char cmdline[LINE_MAX];
-    msg_packet_t *inpkt = malloc(PACKET_SIZE);
+    char buffer[PACKET_SIZE];
+    msg_packet_t *outpkt = malloc(PACKET_SIZE);
+    FILE *fp = NULL;
+    uint8_t cmd_type = CMD_UND;
+    char *msg = NULL;
+    char filename[FILENAME_MAX];
     while (1) {
         printf("> ");
         if (fgets(cmdline, LINE_MAX, stdin) != NULL) {
@@ -54,30 +56,55 @@ int main(int argc, char *argv[])
             if (_argc == 0) {
                 continue;
             } else if (_argc > 0 && strcmp(_argv[0], "exit") == 0) {
-                build_msg_packet(inpkt, CMD_EXIT, NULL, 0);
+                cmd_type = CMD_EXIT;
             } else if (_argc > 0 && strcmp(_argv[0], "ls") == 0) {
-                build_msg_packet(inpkt, CMD_LS, NULL, 0);
+                cmd_type = CMD_LS;
             } else if (_argc > 0 && strcmp(_argv[0], "get") == 0) {
                 if (_argc > 1) {
-                    build_msg_packet(inpkt, CMD_GET, _argv[1], sizeof(_argv[1]));
+                    set_received_filename(filename, _argv[1]);
+                    if ((fp = fopen(filename, "wb")) != NULL) {
+                        cmd_type = CMD_GET;
+                        msg = _argv[1];
+                    } else {
+                        // TODO
+                    }
+                } else {
+                    // TODO
+                }
+            } else if (_argc > 0 && strcmp(_argv[0], "put") == 0) {
+                if (_argc > 1) {
+                    if ((fp = fopen(_argv[1], "rb")) != NULL) {
+                        cmd_type = CMD_PUT;
+                        msg = _argv[1];
+                    } else {
+                        // TODO
+                    }
                 } else {
                     // TODO
                 }
             } else {
-                build_msg_packet(inpkt, CMD_UND, cmdline, sizeof(cmdline));
+                cmd_type = CMD_UND;
+                msg = cmdline;
             }
-            sendto(sock, inpkt, PACKET_SIZE, 0, (struct sockaddr *) &remote, addr_len);
+            build_msg_packet(outpkt, cmd_type, msg, (uint16_t) ((msg == NULL) ? 0 : strlen(msg)));
+            sendto(sock, outpkt, PACKET_SIZE, 0, (struct sockaddr *) &remote, addr_len);
             memset(buffer, 0, sizeof(buffer));
             recvfrom(sock, buffer, sizeof(buffer), 0, (struct sockaddr *) &remote, &addr_len);
 
-            if (((packet_t *) buffer)->header.pkt_type == MSG_TYPE) {
-                msg_packet_t *mpkt = (msg_packet_t *) buffer;
+            msg_packet_t *mpkt = (msg_packet_t *) buffer;
+            if (mpkt->msg_type == MSG_RESP) {
                 printf("%s", mpkt->msg);
+            } else if (mpkt->msg_type == GET_START && fp) {
+                receive_file(fp, sock, (struct sockaddr *) &remote, &addr_len);
+                fclose(fp);
+            } else if (mpkt->msg_type == PUT_START && fp) {
+                send_file(fp, sock, (struct sockaddr *) &remote, addr_len);
+                fclose(fp);
             }
         }
     }
 
-    free(inpkt);
+    free(outpkt);
     close(sock);
     return 0;
 }

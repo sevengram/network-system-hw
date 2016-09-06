@@ -10,16 +10,14 @@
 
 int main(int argc, char *argv[])
 {
-    int sock;                           //This will be our socket
-    struct sockaddr_in local, remote;   //"Internet socket address structure"
-    socklen_t addr_len;                 //length of the sockaddr_in structure
-
     if (argc != 2) {
         printf("USAGE: <port>\n");
         exit(1);
     }
 
-    addr_len = sizeof(struct sockaddr);
+    int sock;                           // This will be our socket
+    struct sockaddr_in local, remote;   // "Internet socket address structure"
+    socklen_t addr_len = sizeof(struct sockaddr);   // length of the sockaddr_in structure
 
     /*
      * This code populates the sockaddr_in struct with
@@ -53,50 +51,61 @@ int main(int argc, char *argv[])
 
     int exit_flag = 0;
     char buffer[PACKET_SIZE];
-    char data[DATA_SIZE_MAX];
-    char message[LINE_MAX];
+    char msg[LINE_MAX];
+    uint8_t cmd_type;
     packet_t *outpkt = malloc(PACKET_SIZE);
+    FILE *fp = NULL;
+    char filename[FILENAME_MAX];
     while (1) {
+        cmd_type = MSG_RESP;
+        memset(msg, 0, sizeof(msg));
         memset(buffer, 0, sizeof(buffer));
         recvfrom(sock, buffer, sizeof(buffer), 0, (struct sockaddr *) &remote, &addr_len);
-
-        if (((packet_t *) buffer)->header.pkt_type == MSG_TYPE) {
-            msg_packet_t *mpkt = (msg_packet_t *) buffer;
-            switch (mpkt->req_type) {
-                case CMD_LS:
-                    list_dir(message, ".", '\n');
-                    build_msg_packet((msg_packet_t *) outpkt, mpkt->req_type, message, (uint16_t) strlen(message));
-                    break;
-                case CMD_EXIT:
-                    strcpy(message, "Server will exit.\n");
-                    build_msg_packet((msg_packet_t *) outpkt, mpkt->req_type, message, (uint16_t) strlen(message));
-                    exit_flag = 1;
-                    break;
-                case CMD_GET:
-                    if (strlen(mpkt->msg) > 0) {
-                        FILE *fp;
-                        size_t nbytes;
-                        if ((fp = fopen(mpkt->msg, "rb")) != NULL) {
-                            while (!feof(fp)) {
-                                nbytes = fread(data, sizeof(char), DATA_SIZE_MAX, fp);
-                                // TODO: change to data
-                                build_msg_packet((msg_packet_t *) outpkt, mpkt->req_type, data, (uint16_t) nbytes);
-                                sendto(sock, outpkt, nbytes, 0, (struct sockaddr *) &remote, addr_len);
-                            }
-                        } else {
-                            // TODO
-                        }
+        msg_packet_t *mpkt = (msg_packet_t *) buffer;
+        switch (mpkt->msg_type) {
+            case CMD_LS:
+                list_dir(msg, ".", '\n');
+                break;
+            case CMD_EXIT:
+                strcpy(msg, "Server will exit.\n");
+                exit_flag = 1;
+                break;
+            case CMD_GET:
+                if (strlen(mpkt->msg) > 0) {
+                    if ((fp = fopen(mpkt->msg, "rb")) != NULL) {
+                        cmd_type = GET_START;
                     } else {
                         // TODO
                     }
-                default:
-                    strcpy(message, mpkt->msg);
-                    build_msg_packet((msg_packet_t *) outpkt, mpkt->req_type, message, (uint16_t) strlen(message));
-            }
-        } else {
-            // TODO: data packet
+                } else {
+                    // TODO
+                }
+                break;
+            case CMD_PUT:
+                if (strlen(mpkt->msg) > 0) {
+                    set_received_filename(filename, mpkt->msg);
+                    if ((fp = fopen(filename, "wb")) != NULL) {
+                        cmd_type = PUT_START;
+                    } else {
+                        // TODO
+                    }
+                } else {
+                    // TODO
+                }
+                break;
+            default:
+                strcpy(msg, mpkt->msg);
         }
+        build_msg_packet((msg_packet_t *) outpkt, cmd_type, msg, (uint16_t) strlen(msg));
         sendto(sock, outpkt, PACKET_SIZE, 0, (struct sockaddr *) &remote, addr_len);
+
+        if (cmd_type == GET_START && fp) {
+            send_file(fp, sock, (struct sockaddr *) &remote, addr_len);
+            fclose(fp);
+        } else if (cmd_type == PUT_START && fp) {
+            receive_file(fp, sock, (struct sockaddr *) &remote, &addr_len);
+            fclose(fp);
+        }
         if (exit_flag == 1) {
             break;
         }
