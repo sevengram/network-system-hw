@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
     char buffer[PACKET_SIZE];
     msg_packet_t *outpkt = malloc(PACKET_SIZE);
     FILE *fp = NULL;
-    uint8_t cmd_type = CMD_UND;
+    uint8_t cmd_type;
     char *msg = NULL;
     char filename[FILENAME_MAX];
     while (1) {
@@ -66,10 +66,12 @@ int main(int argc, char *argv[])
                         cmd_type = CMD_GET;
                         msg = _argv[1];
                     } else {
-                        // TODO
+                        printf("get: Cannot create the file\n");
+                        continue;
                     }
                 } else {
-                    // TODO
+                    printf("get: Missing file operand\n");
+                    continue;
                 }
             } else if (_argc > 0 && strcmp(_argv[0], "put") == 0) {
                 if (_argc > 1) {
@@ -77,10 +79,12 @@ int main(int argc, char *argv[])
                         cmd_type = CMD_PUT;
                         msg = _argv[1];
                     } else {
-                        // TODO
+                        printf("put: Cannot open the file\n");
+                        continue;
                     }
                 } else {
-                    // TODO
+                    printf("put: Missing file operand\n");
+                    continue;
                 }
             } else {
                 cmd_type = CMD_UND;
@@ -96,10 +100,12 @@ int main(int argc, char *argv[])
                 printf("%s", mpkt->msg);
             } else if (mpkt->msg_type == GET_START && fp) {
                 receive_file(fp, sock, (struct sockaddr *) &remote, &addr_len);
-                fclose(fp);
             } else if (mpkt->msg_type == PUT_START && fp) {
                 send_file(fp, sock, (struct sockaddr *) &remote, addr_len);
+            }
+            if (fp != NULL) {
                 fclose(fp);
+                fp = NULL;
             }
         }
     }

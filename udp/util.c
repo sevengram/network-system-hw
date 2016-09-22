@@ -16,7 +16,19 @@ void remove_endl(char *line)
 
 void strip(char *line)
 {
-    // TODO
+    char *p = line;
+    while (*p == ' ') {
+        p++;
+    }
+    strcpy(line, p);
+    size_t n = strlen(line);
+    if (n > 1) {
+        p = line + n - 1;
+    }
+    while (*p == ' ') {
+        *p = '\0';
+        p--;
+    }
 }
 
 /*
@@ -28,8 +40,8 @@ int parse_line(char *cmdline, char argv[][ARG_LEN_MAX])
     char *p;
     int i = 0;
     strcpy(buffer, cmdline);
-    strip(buffer);
     remove_endl(buffer);
+    strip(buffer);
     if (strlen(buffer) == 0) {
         return 0;
     }
@@ -62,6 +74,17 @@ void list_dir(char *buffer, const char *dir_name, char delimiter)
     buffer[pos] = '\0';
 }
 
+void build_msg_packet(msg_packet_t *pkt, uint8_t _req_type, char *_msg, uint16_t _msg_len)
+{
+    memset(pkt, 0, PACKET_SIZE);
+    pkt->header.pkt_type = MSG_TYPE;
+    pkt->msg_type = _req_type;
+    if (_msg) {
+        pkt->msg_len = _msg_len;
+        memcpy(pkt->msg, _msg, _msg_len);
+    }
+}
+
 void build_data_packet(data_packet_t *pkt, uint32_t _offset, char *_data, uint16_t _data_len)
 {
     memset(pkt, 0, PACKET_SIZE);
@@ -73,16 +96,6 @@ void build_data_packet(data_packet_t *pkt, uint32_t _offset, char *_data, uint16
     }
 }
 
-void build_msg_packet(msg_packet_t *pkt, uint8_t _req_type, char *_msg, uint16_t _msg_len)
-{
-    memset(pkt, 0, PACKET_SIZE);
-    pkt->header.pkt_type = MSG_TYPE;
-    pkt->msg_type = _req_type;
-    if (_msg) {
-        pkt->msg_len = _msg_len;
-        memcpy(pkt->msg, _msg, _msg_len);
-    }
-}
 
 void set_received_filename(char *filename, char *path)
 {
@@ -138,5 +151,4 @@ void receive_file(FILE *fp, int sock, struct sockaddr *addr, socklen_t *addr_len
         fwrite(dpkt->data, sizeof(char), dpkt->data_len, fp);
         pos += dpkt->data_len;
     }
-    fclose(fp);
 }

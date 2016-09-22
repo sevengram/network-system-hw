@@ -75,10 +75,10 @@ int main(int argc, char *argv[])
                     if ((fp = fopen(mpkt->msg, "rb")) != NULL) {
                         cmd_type = GET_START;
                     } else {
-                        // TODO
+                        strcpy(msg, "server: get: Cannot open the file\n");
                     }
                 } else {
-                    // TODO
+                    strcpy(msg, "server: get: Missing file operand\n");
                 }
                 break;
             case CMD_PUT:
@@ -87,10 +87,10 @@ int main(int argc, char *argv[])
                     if ((fp = fopen(filename, "wb")) != NULL) {
                         cmd_type = PUT_START;
                     } else {
-                        // TODO
+                        strcpy(msg, "server: put: Cannot create the file\n");
                     }
                 } else {
-                    // TODO
+                    strcpy(msg, "server: get: Missing file operand\n");
                 }
                 break;
             default:
@@ -101,10 +101,12 @@ int main(int argc, char *argv[])
 
         if (cmd_type == GET_START && fp) {
             send_file(fp, sock, (struct sockaddr *) &remote, addr_len);
-            fclose(fp);
         } else if (cmd_type == PUT_START && fp) {
             receive_file(fp, sock, (struct sockaddr *) &remote, &addr_len);
+        }
+        if (fp != NULL) {
             fclose(fp);
+            fp = NULL;
         }
         if (exit_flag == 1) {
             break;
