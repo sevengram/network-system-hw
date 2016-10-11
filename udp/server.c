@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 
     int exit_flag = 0;
     char buffer[PACKET_SIZE];
-    char msg[LINE_MAX];
+    char msg[LINE_LEN_MAX];
     uint8_t cmd_type;
     packet_t *outpkt = malloc(PACKET_SIZE);
     FILE *fp = NULL;

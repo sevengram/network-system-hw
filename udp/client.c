@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
      */
     int _argc;
     char _argv[ARG_MAX][ARG_LEN_MAX];
-    char cmdline[LINE_MAX];
+    char cmdline[LINE_LEN_MAX];
     char buffer[PACKET_SIZE];
     msg_packet_t *outpkt = malloc(PACKET_SIZE);
     FILE *fp = NULL;
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
     char filename[FILENAME_MAX];
     while (1) {
         printf("> ");
-        if (fgets(cmdline, LINE_MAX, stdin) != NULL) {
+        if (fgets(cmdline, LINE_LEN_MAX, stdin) != NULL) {
             _argc = parse_line(cmdline, _argv);
             if (_argc == 0) {
                 continue;

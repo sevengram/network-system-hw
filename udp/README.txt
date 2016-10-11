@@ -4,7 +4,7 @@ Jianxiang Fan
 jianxiang.fan@colorado.edu
 
 
-> How to run the program
+>>> How to run the program
 
 $ make clean
 $ make all
@@ -12,7 +12,8 @@ $ ./server 6000
 $ ./client 127.0.0.1 6000
 
 
-> Commands for client-end
+
+>>> Commands for client-end
 
 ls : List the files in the server's local directory
 
@@ -25,8 +26,11 @@ exit: The server exits.
 
 Any other commands: The server echoes back.
 
+The client can be terminated by typing Ctrl-C.
 
-> Data Struture
+
+
+>>> Data Struture
 
 Two types of packet is defined in util.h
 
@@ -43,6 +47,7 @@ typedef struct
 typedef struct
 {
     header_t header;
+    uint16_t eof;           /* end of file */
     uint16_t data_len;      /* length of data */
     uint32_t offset;        /* offset */
     char data[DATA_SIZE_MAX];   /* data */
@@ -54,14 +59,17 @@ message packet is used to transfer commands from the client-end and the message 
 data packet is used to transfer the file. Offset is used to indicates the position of the data for reconstructing
 the file.
 
-> File Transfer (GET/PUT)
 
-First, the client send a message packet indicates the command (GET/PUT) and its operand.
+
+>>> File Transfer (GET/PUT)
+
+First, the client sends a message packet with the command (GET/PUT) and its operand.
 
 If no problem (file not found, unable to create the file, etc.) occurs, the server sends back a message packet
-(GET_START/PUT_START) which means that the sever is ready send/receive the file.
+(GET_START/PUT_START) which means that the sever is ready to send/receive the file.
 
 When the client receives the GET_START/PUT_START message, it starts to receive/send the file. The received file
-will be named as *.received
+will be named as *.received.
 
-Redundancy is adopted to increase the reliabilty. Each data packet will be sent with a duplicate.
+Redundancy is adopted to increase the reliabilty. Each file will be sent three times. After that, the receiver
+gets a data packet with EOF=1, then the transfer finishes.

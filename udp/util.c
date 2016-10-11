@@ -6,6 +6,9 @@
 #include <sys/socket.h>
 #include "util.h"
 
+/*
+ * Remove \n
+ */
 void remove_endl(char *line)
 {
     size_t n = strlen(line);
@@ -14,6 +17,9 @@ void remove_endl(char *line)
     }
 }
 
+/*
+ * Remove leading and ending blanks
+ */
 void strip(char *line)
 {
     char *p = line;
@@ -36,7 +42,7 @@ void strip(char *line)
  */
 int parse_line(char *cmdline, char argv[][ARG_LEN_MAX])
 {
-    char *buffer = malloc(LINE_MAX);
+    char *buffer = malloc(LINE_LEN_MAX);
     char *p;
     int i = 0;
     strcpy(buffer, cmdline);
@@ -85,17 +91,17 @@ void build_msg_packet(msg_packet_t *pkt, uint8_t _req_type, char *_msg, uint16_t
     }
 }
 
-void build_data_packet(data_packet_t *pkt, uint32_t _offset, char *_data, uint16_t _data_len)
+void build_data_packet(data_packet_t *pkt, uint32_t _offset, char *_data, uint16_t _data_len, uint16_t eof)
 {
     memset(pkt, 0, PACKET_SIZE);
     pkt->header.pkt_type = DATA_TYPE;
+    pkt->eof = eof;
     if (_data) {
         pkt->offset = _offset;
         pkt->data_len = _data_len;
         memcpy(pkt->data, _data, _data_len);
     }
 }
-
 
 void set_received_filename(char *filename, char *path)
 {
@@ -115,16 +121,20 @@ void send_file(FILE *fp, int sock, const struct sockaddr *addr, socklen_t addr_l
     }
     char data[DATA_SIZE_MAX];
     size_t nbytes;
-    uint32_t offset = 0;
+    uint32_t offset;
     data_packet_t *outpkt = malloc(PACKET_SIZE);
-    while (!feof(fp)) {
-        nbytes = fread(data, sizeof(char), DATA_SIZE_MAX, fp);
-        build_data_packet(outpkt, offset, data, (uint16_t) nbytes);
-        sendto(sock, outpkt, PACKET_SIZE, 0, addr, addr_len);
-        sendto(sock, outpkt, PACKET_SIZE, 0, addr, addr_len);
-        offset += nbytes;
+    int i;
+    for (i = 0; i < 3; i++) {
+        offset = 0;
+        fseek(fp, 0, SEEK_SET);
+        while (!feof(fp)) {
+            nbytes = fread(data, sizeof(char), DATA_SIZE_MAX, fp);
+            build_data_packet(outpkt, offset, data, (uint16_t) nbytes, 0);
+            sendto(sock, outpkt, PACKET_SIZE, 0, addr, addr_len);
+            offset += nbytes;
+        }
     }
-    build_data_packet(outpkt, offset, NULL, 0);
+    build_data_packet(outpkt, 0, NULL, 0, 1);
     sendto(sock, outpkt, PACKET_SIZE, 0, addr, addr_len);
     free(outpkt);
 }
@@ -141,7 +151,7 @@ void receive_file(FILE *fp, int sock, struct sockaddr *addr, socklen_t *addr_len
         memset(buffer, 0, sizeof(buffer));
         recvfrom(sock, buffer, sizeof(buffer), 0, addr, addr_len);
         dpkt = (data_packet_t *) buffer;
-        if (dpkt->data_len == 0) {
+        if (dpkt->eof == 1) {
             break;
         }
         if (dpkt->offset != pos) {

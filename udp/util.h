@@ -24,7 +24,7 @@
 
 #define ARG_MAX             16
 #define ARG_LEN_MAX         256
-#define LINE_MAX            256  /* max line size */
+#define LINE_LEN_MAX        256  /* max line size */
 
 
 typedef struct
@@ -52,13 +52,14 @@ typedef struct
 typedef struct
 {
     header_t header;
+    uint16_t eof;           /* end of file */
     uint16_t data_len;      /* length of data */
     uint32_t offset;        /* offset */
     char data[DATA_SIZE_MAX];   /* data */
-    char padding[BODY_SIZE - 6 - DATA_SIZE_MAX];  /* padding */
+    char padding[BODY_SIZE - 8 - DATA_SIZE_MAX];  /* padding */
 } data_packet_t;
 
-void build_data_packet(data_packet_t *pkt, uint32_t _offset, char *_data, uint16_t _data_len);
+void build_data_packet(data_packet_t *pkt, uint32_t _offset, char *_data, uint16_t _data_len, uint16_t eof);
 
 void build_msg_packet(msg_packet_t *pkt, uint8_t _req_type, char *_msg, uint16_t _msg_len);
 
