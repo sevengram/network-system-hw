@@ -1,9 +1,6 @@
-//
-// Created by jfan on 10/11/16.
-//
-
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include "strutil.h"
 
 /*
@@ -60,4 +57,28 @@ int split(char *str, char *sep, char results[][LINE_LEN_MAX])
     }
     free(buf);
     return i;
+}
+
+void split_first(char *str, char sep, char *first, char *second)
+{
+    char *p = strchr(str, sep);
+    if (p != 0) {
+        *p = '\0';
+        strcpy(first, str);
+        strcpy(second, p + 1);
+    } else {
+        strcpy(first, str);
+        strcpy(second, "");
+    }
+}
+
+/*
+ * To lowercase
+ */
+void lower(char *str)
+{
+    int i;
+    for (i = 0; str[i]; i++) {
+        str[i] = tolower(str[i]);
+    }
 }

@@ -3,12 +3,10 @@ project(networks)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11")
 
-add_executable(udp_client udp/client.c udp/util.c)
+# add_executable(udp_client udp/client.c udp/util.c)
 
-add_executable(udp_server udp/server.c udp/util.c)
+# add_executable(udp_server udp/server.c udp/util.c)
 
-add_executable(http_server http_server/server.c http_server/util.c http_server/strutil.c)
+add_executable(http_server http_server/server.c http_server/util.c http_server/strutil.c http_server/util.c http_server/http.c)
 
 add_executable(simple_client http_server/client/client.c http_server/client/csapp.c)
-
-# add_executable(run_test udp/test.c udp/util.c)
