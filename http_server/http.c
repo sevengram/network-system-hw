@@ -3,7 +3,7 @@
 #include "http.h"
 #include "util.h"
 
-const char *http_resp_header_format = "%s %d %s\r\nDate: %s\r\nContent-Length: %d\r\nConnection: %s\r\nContent-Type: %s\r\n\r\n";
+const char *http_resp_header_format = "%s %d %s\r\nDate: %s\r\nContent-Length: %d\r\nConnection: %s\r\nContent-Type: %s\r\nCache-control: max-age=3600\r\n\r\n";
 
 const uint16_t err_status_code[] = {
         200,
@@ -21,7 +21,7 @@ const char *err_resp[] = {
         "<html><body>501 Not Implemented</body></html>"
 };
 
-void parse_http_req(http_req_t *req, char *buf)
+void parse_http_req(http_req_t *req, char *buf, config_t *conf)
 {
     int i, n;
     char **lines = malloc_strings(32, 256);
@@ -36,32 +36,50 @@ void parse_http_req(http_req_t *req, char *buf)
     int m = split(lines[0], " ", p);
     if (m < 3) {
         req->error_code = ERR_BAD_REQUEST;
-    }
-    if (strcmp(p[0], "GET") == 0) {
-        req->method = GET;
     } else {
-        req->error_code = ERR_NOT_IMPLEMENTED;
-    }
-    strcpy(req->uri, p[1]);
-    if (strcmp(p[2], "HTTP/1.1") == 0) {
-        req->version = 11;
-    } else if (strcmp(p[2], "HTTP/1.0") == 0) {
-        req->version = 10;
-    } else {
-        req->error_code = ERR_BAD_REQUEST;
-    }
-
-    for (i = 1; i < n; i++) {
-        remove_endl(lines[i]);
-        lower(lines[i]);
-        split_first(lines[i], ':', p[0], p[1]);
-        strip(p[0], ' ');
-        if (strcmp(p[0], "host") == 0) {
-            strip(p[1], ' ');
-            strcpy(req->host, p[1]);
-        } else if (strcmp(p[0], "connection") == 0) {
-            strip(p[1], ' ');
-            req->keep_alive = (uint8_t) ((strcmp(p[1], "keep-alive") == 0) ? 1 : 0);
+        if (strcmp(p[0], "GET") == 0) {
+            req->method = GET;
+        } else if (strcmp(p[0], "POST") == 0) {
+            req->method = POST;
+        } else {
+            req->error_code = ERR_NOT_IMPLEMENTED;
+        }
+        strcpy(req->uri, p[1]);
+        if (strcmp(req->uri, "/") == 0) {
+            strcat(req->uri, conf->index[0]);
+        }
+        get_content_type(conf, req->uri, req->content_type);
+        if (strlen(req->content_type) == 0) {
+            req->error_code = ERR_NOT_IMPLEMENTED;
+        }
+        if (strcmp(p[2], "HTTP/1.1") == 0) {
+            req->version = 11;
+        } else if (strcmp(p[2], "HTTP/1.0") == 0) {
+            req->version = 10;
+        } else {
+            req->error_code = ERR_BAD_REQUEST;
+        }
+        for (i = 1; i < n; i++) {
+            remove_endl(lines[i]);
+            if (strlen(lines[i]) == 0) {
+                break;
+            }
+            lower(lines[i]);
+            split_first(lines[i], ':', p[0], p[1]);
+            strip(p[0], ' ');
+            if (strcmp(p[0], "host") == 0) {
+                strip(p[1], ' ');
+                strcpy(req->host, p[1]);
+            } else if (strcmp(p[0], "connection") == 0) {
+                strip(p[1], ' ');
+                req->keep_alive = (uint8_t) ((strcmp(p[1], "keep-alive") == 0) ? 1 : 0);
+            }
+        }
+        for (i = i + 1; i < n; i++) {
+            strcat(req->post_data, lines[i]);
+            if (i != n - 1) {
+                strcat(req->post_data, "\n");
+            }
         }
     }
     free_strings(p, 4);
@@ -111,4 +129,11 @@ void build_http_resp_header(char *buf, http_resp_header_t *resp_header)
             resp_header->content_length,
             resp_header->keep_alive ? "keep-alive" : "close",
             resp_header->content_type);
+}
+
+void append_post_reponse(char *buf, char *post_data)
+{
+    char tmp[1024];
+    sprintf(tmp, "<h1>Post Data</h1><pre>%s</pre>", post_data);
+    strcat(buf, tmp);
 }

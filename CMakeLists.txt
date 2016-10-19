@@ -10,5 +10,3 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11")
 add_executable(http_server http_server/server.c http_server/util.c
         http_server/strutil.c http_server/util.c http_server/http.c
         http_server/config.c)
-
-add_executable(simple_client http_server/client/client.c http_server/client/csapp.c)

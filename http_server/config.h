@@ -16,6 +16,6 @@ typedef struct
 
 int init_config(config_t *conf, const char *conf_file);
 
-void get_content_type(config_t *conf, const char *file_extension, char *content_type);
+void get_content_type(config_t *conf, const char *filename, char *content_type);
 
 #endif //NETWORKS_CONFIG_H

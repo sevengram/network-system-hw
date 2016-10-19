@@ -19,6 +19,14 @@ int init_config(config_t *conf, const char *conf_file)
 
     bzero(buf, sizeof(buf));
     bzero(conf, sizeof(config_t));
+
+    // Some default settings
+    conf->port = 80;
+    strcpy(conf->root, ".");
+    strcpy(conf->index[0], "index.html");
+    strcpy(conf->file_extensions[0], ".html");
+    strcpy(conf->content_types[0], "text/html");
+
     while (fgets(buf, sizeof(buf), fp) != 0) {
         remove_endl(buf);
         strip(buf, ' ');
