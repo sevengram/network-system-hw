@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <time.h>
-#include <errno.h>
-#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
 #include "util.h"
 
 void format_current_time(char *buf, size_t maxsize)
@@ -11,24 +12,41 @@ void format_current_time(char *buf, size_t maxsize)
     strftime(buf, maxsize, "%a, %d %b %Y %H:%M:%S %Z", &gt);
 }
 
-/*
- * rio_writen - robustly write n bytes (unbuffered)
- */
-ssize_t rio_writen(int fd, void *usrbuf, size_t n)
+long size_of_file(const char *filename)
 {
-    size_t nleft = n;
-    ssize_t nwritten;
-    char *bufp = usrbuf;
-
-    while (nleft > 0) {
-        if ((nwritten = write(fd, bufp, nleft)) <= 0) {
-            if (errno == EINTR)  /* interrupted by sig handler return */
-                nwritten = 0;    /* and call write() again */
-            else
-                return -1;       /* errno set by write() */
-        }
-        nleft -= nwritten;
-        bufp += nwritten;
+    struct stat st;
+    if (stat(filename, &st) == -1) {
+        return -1;
+    } else {
+        return st.st_size;
     }
-    return n;
+}
+
+char **malloc_strings(size_t n, size_t len)
+{
+    int i;
+    char **c = calloc(n, sizeof(char *));
+    for (i = 0; i < n; i++) {
+        c[i] = calloc(len, sizeof(char));
+    }
+    return c;
+}
+
+void free_strings(char **c, size_t n)
+{
+    int i;
+    for (i = 0; i < n; i++) {
+        free(c[i]);
+    }
+    free(c);
+}
+
+void get_file_extension(const char *filename, char *extension)
+{
+    char *p = strrchr(filename, '.');
+    if (p != 0) {
+        strcpy(extension, p);
+    } else {
+        strcpy(extension, "");
+    }
 }

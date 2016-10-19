@@ -21,10 +21,10 @@ void remove_endl(char *line)
 /*
  * Remove leading and ending blanks
  */
-void strip(char *line)
+void strip(char *line, char sep)
 {
     char *p = line;
-    while (*p == ' ') {
+    while (*p == sep) {
         p++;
     }
     strcpy(line, p);
@@ -32,7 +32,7 @@ void strip(char *line)
     if (n > 1) {
         p = line + n - 1;
     }
-    while (*p == ' ') {
+    while (*p == sep) {
         *p = '\0';
         p--;
     }
@@ -41,17 +41,17 @@ void strip(char *line)
 /*
  * Split str
  */
-int split(char *str, char *sep, char results[][LINE_LEN_MAX])
+int split(char *str, char *sep, char **results)
 {
     size_t n = strlen(str);
     if (n == 0) {
         return 0;
     }
-    char *buf = malloc(n);
     char *p;
     int i = 0;
+    char *buf = calloc(n + 1, sizeof(char));
     strcpy(buf, str);
-    while ((p = strsep(&buf, sep)) != NULL) {
+    while ((p = strsep(&buf, sep)) != 0) {
         strcpy(results[i], p);
         i++;
     }

@@ -2,14 +2,22 @@
 #define NETWORKS_HTTP_H
 
 #include "strutil.h"
+#include "config.h"
 #include <stdint.h>
+
+#define BUF_SIZE        4096
 
 #define GET     1
 #define POST    2
 
-#define ERR_REQ_INVALID_FORMAT      91
-#define ERR_REQ_INVALID_METHOD      92
-#define ERR_REQ_INVALID_VERSION     93
+#define ERR_BAD_REQUEST         1
+#define ERR_NOT_FOUND           2
+#define ERR_SERVER_ERROR        3
+#define ERR_NOT_IMPLEMENTED     4
+
+extern const uint16_t err_status_code[];
+
+extern const char *err_resp[];
 
 typedef struct
 {
@@ -26,13 +34,20 @@ typedef struct
     uint8_t version;
     uint16_t status_code;
     uint8_t keep_alive;
-    uint8_t content_type;
-    size_t content_length;
+    int64_t content_length;
+    char content_type[64];
 } http_resp_header_t;
 
-http_req_t parse_http_req(char *buf);
+typedef struct
+{
+    int connfd;
+    int readfd;
+    http_req_t *req;
+    char *buf;
+} epoll_io_t;
+
+void parse_http_req(http_req_t *req, char *buf);
 
 void build_http_resp_header(char *buf, http_resp_header_t *resp_header);
-
 
 #endif //NETWORKS_HTTP_H
