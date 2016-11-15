@@ -98,11 +98,13 @@ int main(int argc, char *argv[])
 
     int i, n;
     while (1) {
+        // Wait for events on an epoll instance
         n = epoll_wait(epollfd, events, events_count, -1);
         if (n == -1) {
             perror("epoll_wait");
             continue;
         }
+        // Handle all triggered events
         for (i = 0; i < n; ++i) {
             if (events[i].data.fd == listenfd) {
                 if (events_count >= EPOLL_SIZE_MAX) {
@@ -175,6 +177,7 @@ int handle_accept(int epollfd, struct epoll_event *ev)
             return -1;
         }
     }
+    printf("new socket connected, fd=%d\n", connfd);
     if (setnonblocking(connfd) < 0) {
         perror("setnonblocking error");
     }
