@@ -11,9 +11,8 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11 -pthread")
 #       http_server/strutil.c http_server/http.c
 #       http_server/config.c)
 
+link_libraries(ssl crypto)
 
-add_executable(dfc dfc/server.c dfc/util.c dfc/strutil.c dfc/transmission.c)
+add_executable(dfc dfc/server.c dfc/util.c dfc/strutil.c dfc/transmission.c dfc/config.c)
 
-add_executable(client dfc/client.c dfc/util.c dfc/strutil.c dfc/transmission.c)
-
-add_executable(test_client dfc/client/client.c dfc/client/csapp.c)
+add_executable(client dfc/client.c dfc/util.c dfc/strutil.c dfc/transmission.c dfc/config.c)
