@@ -23,6 +23,8 @@ char **malloc_strings(size_t n, size_t len);
 
 void free_strings(char **c, size_t n);
 
+void clear_strings(char **c, size_t n, size_t len);
+
 void get_file_extension(const char *filename, char *extension);
 
 void set_partition_name(char *partname, const char *filename, int n);
