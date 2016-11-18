@@ -5,10 +5,10 @@ CLEAN=rm -f client dfc *.o *.a
 all:client dfc
 
 #  Compile and link
-client:client.c util.c strutil.c transmission.c config.c
+client:client.c util.c strutil.c trans.c config.c
 	gcc $(CFLG) -o $@ $^ $(LIBS)
 
-dfc:server.c util.c strutil.c transmission.c config.c
+dfc:server.c util.c strutil.c trans.c config.c
 	gcc $(CFLG) -o $@ $^ $(LIBS)
 
 

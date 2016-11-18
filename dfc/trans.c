@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <sys/socket.h>
-#include "transmission.h"
+#include "trans.h"
 #include "util.h"
 
 /*

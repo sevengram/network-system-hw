@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <pthread.h>
-#include "transmission.h"
+#include "trans.h"
 #include "strutil.h"
 #include "util.h"
 
