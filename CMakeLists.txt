@@ -17,4 +17,4 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11 -pthread")
 #
 # add_executable(client dfc/client.c dfc/util.c dfc/strutil.c dfc/trans.c dfc/config.c)
 
-add_executable(webproxy proxy/proxy.c proxy/rio.c proxy/log.c proxy/log.h)
+add_executable(webproxy proxy/proxy.c proxy/log.c)

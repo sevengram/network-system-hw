@@ -1,0 +1,36 @@
+called http://www.umich.edu/~chemh215/W09HTML/SSG4/ssg6/html/Website/DREAMWEAVERPGS/first.html 0
+.called http://www.umich.edu/~chemh215/W09HTML/SSG4/ssg6/html/Website/DREAMWEAVERPGS/first.html 0
+.called http://www.umich.edu/~chemh215/W09HTML/SSG4/ssg6/html/Website/DREAMWEAVERPGS/first.html 0
+Fcalled http://www.umich.edu/~chemh215/W09HTML/SSG4/ssg6/html/Website/DREAMWEAVERPGS/first.html 0
+called http://www-personal.umich.edu/~kevinand/first.html 0
+Ecalled http://www.umich.edu/~chemh215/W09HTML/SSG4/ssg6/html/Website/DREAMWEAVERPGS/first.html 0
+called http://www.wix.com/ 0
+.called http://www.umich.edu/~chemh215/W09HTML/SSG4/ssg6/html/Website/DREAMWEAVERPGS/first.html 1
+called http://www.umich.edu/~chemh215/W09HTML/SSG4/ssg6/html/Website/DREAMWEAVERPGS/first.html 2
+.
+======================================================================
+ERROR: test_4prefetch (__main__.TestProxy)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test.py", line 51, in test_4prefetch
+    self.assertLess(self.exec_time(url), 5)
+  File "test.py", line 28, in exec_time
+    self.tn.read_all()
+  File "/usr/lib/python2.7/telnetlib.py", line 384, in read_all
+    self.fill_rawq()
+  File "/usr/lib/python2.7/telnetlib.py", line 575, in fill_rawq
+    buf = self.sock.recv(50)
+error: [Errno 104] Connection reset by peer
+
+======================================================================
+FAIL: test_3clear_proxy (__main__.TestProxy)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "test.py", line 44, in test_3clear_proxy
+    self.assertGreater(self.exec_time(url), 5)
+AssertionError: 0.17482900619506836 not greater than 5
+
+----------------------------------------------------------------------
+Ran 6 tests in 27.262s
+
+FAILED (failures=1, errors=1)
